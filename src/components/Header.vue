@@ -29,11 +29,13 @@
 
 <script>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 export default {
     name: 'AppHeader',
     setup() {
         const searchQuery = ref('')
+        const router = useRouter()
         const isAuthenticated = ref(false)
         const user = ref({
             name: 'Александр Помчук',
@@ -45,7 +47,7 @@ export default {
         }
 
         const handleLogin = () => {
-            isAuthenticated.value = true
+            router.push('/login')
         }
 
         return {

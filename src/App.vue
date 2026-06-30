@@ -1,15 +1,17 @@
 <template>
-  <div class="layout">
-    <Sidebar />
+  <div :class="['layout', { 'full-page': $route.meta.hideNavigation }]">
+
+    <Sidebar v-if="!$route.meta.hideNavigation" />
 
     <main class="main-content">
-      <AppHeader />
+      <AppHeader v-if="!$route.meta.hideNavigation" />
+
       <div class="content-body">
         <router-view></router-view>
       </div>
     </main>
 
-    <div class="player-container">
+    <div v-if="!$route.meta.hideNavigation" class="player-container">
       <Player />
     </div>
   </div>
@@ -87,6 +89,19 @@ body {
   width: 100vw;
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr auto;
+}
+
+.layout.full-page {
+  display: block;
+  height: 100vh;
+  width: 100vw;
+}
+
+.full-page .main-content .content-body {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar {

@@ -64,7 +64,7 @@ export default {
           this.activeIndex = 2
         }
       },
-      immediate: GPUExternalTexture
+      immediate: true
     }
   }
 }
