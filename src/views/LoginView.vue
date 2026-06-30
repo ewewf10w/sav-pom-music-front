@@ -14,12 +14,12 @@
         </div>
 
         <div class="auth-card">
-            <h2 class="auth-title">Вход</h2>
+            <h2 class="auth-title">Войти</h2>
 
             <form @submit.prevent="handleLogin" class="auth-form">
                 <div class="input-group">
-                    <label for="email">Электронная почта</label>
-                    <input type="email" id="email" v-model="email" placeholder="example@mail.com" required />
+                    <label for="username">Логин</label>
+                    <input type="text" id="username" v-model="username" placeholder="Введи свой логин" required />
                 </div>
 
                 <div class="input-group">
@@ -45,18 +45,18 @@ import { useRouter } from 'vue-router'
 export default {
     name: 'LoginView',
     setup() {
-        const email = ref('')
+        const username = ref('')
         const password = ref('')
         const router = useRouter()
 
         const handleLogin = () => {
-            console.log('Логин:', email.value, password.value)
+            console.log('Логин:', username.value, password.value)
 
             router.push('/home')
         }
 
         return {
-            email,
+            username,
             password,
             handleLogin
         }
