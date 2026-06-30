@@ -30,10 +30,20 @@
                 <button type="submit" class="auth-btn">Войти</button>
             </form>
 
+            <div class="error-container">
+                <Transition name="fade-error" mode="out-in">
+                    <span v-if="errorMessage" :key="errorMessage" class="error-text">
+                        {{ errorMessage }}
+                    </span>
+                </Transition>
+            </div>
+
             <p class="auth-footer">
                 Нет аккаунта?
                 <router-link to="/register" class="auth-link">Зарегистрироваться</router-link>
             </p>
+
+
         </div>
     </div>
 </template>
@@ -41,23 +51,32 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 export default {
     name: 'LoginView',
     setup() {
         const username = ref('')
         const password = ref('')
+        const errorMessage = ref('')
         const router = useRouter()
+        const authStore = useAuthStore()
 
-        const handleLogin = () => {
-            console.log('Логин:', username.value, password.value)
+        const handleLogin = async () => {
+            try {
+                errorMessage.value = ''
+                await authStore.login(username.value, password.value)
 
-            router.push('/home')
+                router.push('/home')
+            } catch (error) {
+                errorMessage.value = error.message
+            }
         }
 
         return {
             username,
             password,
+            errorMessage,
             handleLogin
         }
     }

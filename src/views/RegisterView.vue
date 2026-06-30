@@ -55,6 +55,7 @@
 <script>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 export default {
     name: 'RegisterView',
@@ -64,6 +65,7 @@ export default {
         const confirmPassword = ref('')
         const errorMessage = ref('')
         const router = useRouter()
+        const authStore = useAuthStore()
 
         watch([password, confirmPassword], () => {
             if (confirmPassword.value && password.value !== confirmPassword.value) {
@@ -73,16 +75,20 @@ export default {
             }
         })
 
-        const handleRegister = () => {
+        const handleRegister = async () => {
             if (password.value !== confirmPassword.value) {
                 errorMessage.value = 'Пароли не совпадают'
                 return
             }
 
-            errorMessage.value = ''
-            console.log('Регистрация отправлена:', username.value, password.value)
+            try {
+                errorMessage.value = ''
+                await authStore.register(username.value, password.value)
 
-            router.push('/login')
+                router.push('/home')
+            } catch (error) {
+                errorMessage.value = error.message
+            }
         }
 
         return {
