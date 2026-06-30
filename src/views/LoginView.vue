@@ -78,7 +78,6 @@ export default {
     justify-content: center;
     align-items: center;
     min-height: calc(100vh - 180px);
-    /* Учитываем высоту хедера и плеера */
     width: 100%;
 }
 

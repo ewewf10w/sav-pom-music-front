@@ -58,7 +58,6 @@ export default {
 
         const handleRegister = () => {
             console.log('Регистрация:', username.value, email.value, password.value)
-            // Здесь будет отправка POST-запроса на регистрацию
             router.push('/login')
         }
 
@@ -73,7 +72,6 @@ export default {
 </script>
 
 <style scoped>
-/* Копируем блок стилей из LoginView один в один */
 .auth-wrapper {
     display: flex;
     flex-direction: column;
