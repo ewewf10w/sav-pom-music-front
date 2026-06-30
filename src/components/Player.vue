@@ -1,30 +1,19 @@
 <template>
   <div class="player-container">
     <div class="player">
-      <audio ref="audioPlayer" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-        @timeupdate="onTimeUpdate" @loadedmetadata="onLoadedMetadata" @ended="isPlaying = false"></audio>
-
       <div class="player-left">
         <div class="player-cover">
-          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVQZIC-nZ87kQQMxaymtqi1yJGBY0c5VNY7Q&s"
-            alt="">
+          <img :src="playerStore.currentTrack ? playerStore.currentTrack.cover : '/DefaultCover.svg'" alt="">
         </div>
         <div class="player-info">
-          <p class="player-title">Song Title</p>
-          <p class="player-artist">Artist Name</p>
-        </div>
-        <div class="player-liked">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M12.62 20.81C12.28 20.93 11.72 20.93 11.38 20.81C8.48 19.82 2 15.69 2 8.68998C2 5.59998 4.49 3.09998 7.56 3.09998C9.38 3.09998 10.99 3.97998 12 5.33998C13.01 3.97998 14.63 3.09998 16.44 3.09998C19.51 3.09998 22 5.59998 22 8.68998C22 15.69 15.52 19.82 12.62 20.81Z"
-              stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
+          <p class="player-title">{{ playerStore.currentTrack ? playerStore.currentTrack.title : 'Нет трека' }}</p>
+          <p class="player-artist">{{ playerStore.currentTrack ? playerStore.currentTrack.artist : 'Исполнитель' }}</p>
         </div>
       </div>
 
       <div class="player-controls">
         <div class="player-buttons">
-          <button class="control-btn">
+          <button class="control-btn" @click="playerStore.prevTrack">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
                 d="M20.24 7.22V16.79C20.24 18.75 18.11 19.98 16.41 19L12.26 16.61L8.11002 14.21C6.41002 13.23 6.41002 10.78 8.11002 9.8L12.26 7.4L16.41 5.01C18.11 4.03 20.24 5.25 20.24 7.22ZM3.76001 18.93C3.35001 18.93 3.01001 18.59 3.01001 18.18V5.82001C3.01001 5.41001 3.35001 5.07001 3.76001 5.07001C4.17001 5.07001 4.51001 5.41001 4.51001 5.82001V18.18C4.51001 18.59 4.17001 18.93 3.76001 18.93Z"
@@ -32,8 +21,8 @@
             </svg>
           </button>
 
-          <button class="control-btn play-pause-btn" @click="togglePlay">
-            <svg v-if="isPlaying" width="47" height="47" viewBox="0 0 47 47" fill="none">
+          <button class="control-btn play-pause-btn" @click="playerStore.togglePlay">
+            <svg v-if="playerStore.isPlaying" width="47" height="47" viewBox="0 0 47 47" fill="none">
               <circle cx="23.5" cy="23.5" r="23.5" fill="#FF7E3A" />
               <path d="M18 15H21V32H18V15ZM26 15H29V32H26V15Z" fill="white" />
             </svg>
@@ -44,7 +33,7 @@
             </svg>
           </button>
 
-          <button class="control-btn">
+          <button class="control-btn" @click="playerStore.nextTrack">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
                 d="M3.76001 7.22V16.79C3.76001 18.75 5.89001 19.98 7.59001 19L11.74 16.61L15.89 14.21C17.59 13.23 17.59 10.78 15.89 9.8L11.74 7.4L7.59001 5.01C5.89001 4.03 3.76001 5.25 3.76001 7.22ZM20.24 18.93C19.83 18.93 19.49 18.59 19.49 18.18V5.82001C19.49 5.41001 19.83 5.07001 20.24 5.07001C20.65 5.07001 20.99 5.41001 20.99 5.82001V18.18C20.99 18.59 20.66 18.93 20.24 18.93Z"
@@ -56,7 +45,7 @@
         <div class="player-progress">
           <p>{{ formatTime(currentTime) }}</p>
           <div class="slider-wrapper" :style="{ '--progress': progressPercent + '%' }">
-            <input type="range" min="0" :max="duration" step="0.1" :value="currentTime" @input="onInputProgress"
+            <input type="range" min="0" :max="duration" step="0.01" :value="currentTime" @input="onInputProgress"
               @change="onSeek" class="progress-slider" />
           </div>
           <p>-{{ formatTime(duration - currentTime) }}</p>
@@ -79,68 +68,82 @@
 </template>
 
 <script>
+import { usePlayerStore } from '../stores/player'
+
 export default {
   name: 'Player',
+  setup() {
+    const playerStore = usePlayerStore()
+    // Инициализируем аудиопоток в сторе сразу, чтобы связать события
+    playerStore.initAudio()
+    return { playerStore }
+  },
   data() {
     return {
-      isPlaying: false,
       currentTime: 0,
       duration: 0,
       volume: 0.8,
-      isDragging: false,
+      isDragging: false
     }
   },
   computed: {
     progressPercent() {
-      if (!this.duration) return 0;
-      return (this.currentTime / this.duration) * 100;
+      if (!this.duration) return 0
+      return (this.currentTime / this.duration) * 100
+    }
+  },
+  mounted() {
+    // Подвешиваем синхронизацию интерфейса на глобальный объект Audio стора
+    if (this.playerStore.audio) {
+      this.playerStore.audio.addEventListener('timeupdate', this.syncProgress)
+      this.playerStore.audio.addEventListener('loadedmetadata', this.syncMetadata)
+      this.playerStore.audio.volume = this.volume
+    }
+  },
+  beforeUnmount() {
+    if (this.playerStore.audio) {
+      this.playerStore.audio.removeEventListener('timeupdate', this.syncProgress)
+      this.playerStore.audio.removeEventListener('loadedmetadata', this.syncMetadata)
     }
   },
   methods: {
-    togglePlay() {
-      const audio = this.$refs.audioPlayer;
-      if (this.isPlaying) {
-        audio.pause();
-      } else {
-        audio.play();
+    syncProgress() {
+      if (!this.isDragging && this.playerStore.audio) {
+        this.currentTime = this.playerStore.audio.currentTime
       }
-      this.isPlaying = !this.isPlaying;
+    },
+    syncMetadata() {
+      if (this.playerStore.audio) {
+        this.duration = this.playerStore.audio.duration
+      }
     },
     onInputProgress(event) {
-      this.isDragging = true;
-      this.currentTime = parseFloat(event.target.value);
-    },
-    onLoadedMetadata() {
-      const audio = this.$refs.audioPlayer;
-      this.duration = audio.duration;
-      audio.volume = this.volume;
-    },
-    onTimeUpdate() {
-      if (!this.isDragging && this.$refs.audioPlayer) {
-        this.currentTime = this.$refs.audioPlayer.currentTime;
-      }
+      this.isDragging = true
+      this.currentTime = parseFloat(event.target.value)
     },
     onSeek(event) {
-      const audio = this.$refs.audioPlayer;
-      const newTime = parseFloat(event.target.value);
-
-      audio.currentTime = newTime;
-      this.currentTime = newTime;
-
+      const audio = this.playerStore.audio
+      const newTime = parseFloat(event.target.value)
+      if (audio) {
+        audio.currentTime = newTime
+      }
+      this.currentTime = newTime
       setTimeout(() => {
-        this.isDragging = false;
-      }, 100);
+        this.isDragging = false
+      }, 100)
     },
     onVolumeChange(event) {
-      const audio = this.$refs.audioPlayer;
-      this.volume = parseFloat(event.target.value);
-      audio.volume = this.volume;
+      const audio = this.playerStore.audio
+      this.volume = parseFloat(event.target.value)
+      if (audio) {
+        audio.volume = this.volume
+      }
     },
     formatTime(seconds) {
-      if (isNaN(seconds) || seconds < 0) return '0:00';
-      const mins = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      if (isNaN(seconds) || seconds < 0) return '0:00'
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.floor(seconds % 60)
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`
     }
   }
 }
@@ -159,6 +162,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.player-cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .player-cover img {
@@ -189,7 +199,6 @@ export default {
   color: var(--color-foundation-dark-lighter);
 }
 
-/* Кнопки управления */
 .control-btn {
   background: none;
   border: none;

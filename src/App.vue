@@ -3,12 +3,10 @@
     <Sidebar />
 
     <main class="main-content">
-
+      <AppHeader />
       <div class="content-body">
-        <HomeView />
+        <router-view></router-view>
       </div>
-
-
     </main>
 
     <div class="player-container">
@@ -21,13 +19,14 @@
 import Sidebar from './components/Sidebar.vue'
 import Player from './components/Player.vue'
 import HomeView from './views/HomeView.vue'
+import AppHeader from './components/Header.vue'
 
 export default {
   name: 'App',
   components: {
     Sidebar,
     Player,
-    HomeView
+    AppHeader,
   }
 }
 </script>
@@ -105,9 +104,17 @@ body {
   flex-direction: column;
   height: 100%;
 
-  overflow-y: auto;
+  /* padding: 32px 38px; */
+  position: relative;
+  overflow: hidden;
+}
 
+.content-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-top: 64px;
   padding: 32px 38px;
+  height: 100%;
 }
 
 .player-container {
