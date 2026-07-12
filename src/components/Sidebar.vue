@@ -25,16 +25,6 @@
           Главная
         </router-link>
 
-        <router-link to="/search" class="menu-item" active-class="active">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M9.58333 17.5C13.9556 17.5 17.5 13.9556 17.5 9.58332C17.5 5.21107 13.9556 1.66666 9.58333 1.66666C5.21108 1.66666 1.66667 5.21107 1.66667 9.58332C1.66667 13.9556 5.21108 17.5 9.58333 17.5Z"
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M18.3333 18.3333L16.6667 16.6667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg>
-          Поиск
-        </router-link>
 
         <router-link to="/favorites" class="menu-item" active-class="active">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -74,6 +64,16 @@
           Плейлисты
         </router-link>
 
+        <router-link to="/uploads" class="menu-item" active-class="active">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" class="nav-icon">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span class="nav-text">Загрузки</span>
+        </router-link>
+
         <div v-if="activeIndex !== -1" class="sliding-indicator"
           :style="{ transform: `translateY(calc(${activeIndex * 100}% + ${activeIndex * 16.5}px))` }">
         </div>
@@ -95,11 +95,11 @@ export default {
       handler(path) {
         if (path.includes('/home')) {
           this.activeIndex = 0
-        } else if (path.includes('/search')) {
-          this.activeIndex = 1
         } else if (path.includes('/favorites')) {
-          this.activeIndex = 2
+          this.activeIndex = 1
         } else if (path.includes('/playlists')) {
+          this.activeIndex = 2
+        } else if (path.includes('/uploads')) {
           this.activeIndex = 3
         } else {
           this.activeIndex = -1

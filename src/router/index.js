@@ -6,15 +6,28 @@ import RegisterView from '../views/RegisterView.vue'
 import { useAuthStore } from '../stores/auth'
 import EditProfileView from '../views/EditProfileView.vue'
 import PlaylistsView from '../views/PlaylistsView.vue'
+import SearchResultsView from '../views/SearchResultsView.vue'
+import UploadsView from '../views/UploadsView.vue'
 
-const Placeholder = { 
-  template: '<div style="padding: 24px; color: #99938f; font-family: var(--font-family);">Страница находится в разработке...</div>' 
+const Placeholder = {
+  template: '<div style="padding: 24px; color: #99938f; font-family: var(--font-family);">Страница находится в разработке...</div>'
 }
 
 const routes = [
   {
     path: '/',
     redirect: '/home'
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: PlaylistView,
+    props: { type: 'favorites' }
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: SearchResultsView
   },
   {
     path: '/profile/edit',
@@ -24,7 +37,12 @@ const routes = [
   {
     path: '/playlists',
     name: 'playlists',
-    component: PlaylistsView // Твой компонент плейлистов
+    component: PlaylistsView
+  },
+  {
+    path: '/uploads',
+    name: 'uploads',
+    component: UploadsView
   },
   {
     path: '/home',
@@ -43,18 +61,8 @@ const routes = [
     path: '/playlist/:id',
     name: 'regular-playlist',
     component: PlaylistView,
-    props: route => ({ id: Number(route.params.id), type: 'regular' })
+    props: route => ({ id: Number(route.params.id), type: 'playlist' }) 
   },
-  {
-    path: '/favorites',
-    name: 'favorites',
-    component: Placeholder
-  },
-  {
-    path: '/search',
-    name: 'search',
-    component: Placeholder
-  }
 ]
 
 const router = createRouter({
@@ -64,7 +72,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.hideNavigation && authStore.isAuthenticated) {
     next('/home')
   } else {

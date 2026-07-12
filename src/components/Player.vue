@@ -74,7 +74,6 @@ export default {
   name: 'Player',
   setup() {
     const playerStore = usePlayerStore()
-    // Инициализируем аудиопоток в сторе сразу, чтобы связать события
     playerStore.initAudio()
     return { playerStore }
   },
@@ -93,7 +92,6 @@ export default {
     }
   },
   mounted() {
-    // Подвешиваем синхронизацию интерфейса на глобальный объект Audio стора
     if (this.playerStore.audio) {
       this.playerStore.audio.addEventListener('timeupdate', this.syncProgress)
       this.playerStore.audio.addEventListener('loadedmetadata', this.syncMetadata)

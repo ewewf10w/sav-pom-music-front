@@ -1,6 +1,5 @@
 <template>
   <div :class="['layout', { 'full-page': $route.meta.hideNavigation }]">
-
     <Sidebar v-if="!$route.meta.hideNavigation" />
 
     <main class="main-content">
@@ -18,23 +17,33 @@
 </template>
 
 <script>
-import Sidebar from './components/Sidebar.vue'
-import Player from './components/Player.vue'
-import HomeView from './views/HomeView.vue'
-import AppHeader from './components/Header.vue'
+import Sidebar from "./components/Sidebar.vue";
+import Player from "./components/Player.vue";
+import AppHeader from "./components/Header.vue";
+import { usePlayerStore } from "./stores/player";
+import { onMounted } from "vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
     Sidebar,
     Player,
     AppHeader,
-  }
-}
+  },
+  setup() {
+    const playerStore = usePlayerStore();
+
+    onMounted(() => {
+      playerStore.fetchFavorites();
+    });
+
+    return {};
+  },
+};
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Pliant:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Pliant:ital,wght@0,100..900;1,100..900&display=swap");
 
 :root {
   --color-foundation-orange-light: #fff2eb;
@@ -79,8 +88,8 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background-color: #F3F4F8;
-  font-family: 'Pliant', sans-serif;
+  background-color: #f3f4f8;
+  font-family: "Pliant", sans-serif;
 }
 
 .layout {
@@ -110,7 +119,6 @@ body {
   height: 100%;
 }
 
-
 .main-content {
   grid-column: 2;
   grid-row: 1;
@@ -118,8 +126,6 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-
-  /* padding: 32px 38px; */
   position: relative;
   overflow: hidden;
 }

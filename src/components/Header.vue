@@ -1,14 +1,48 @@
 <template>
     <header class="app-header">
         <div class="header-center">
-            <div class="search-container">
+            <div class="search-container" ref="searchContainerRef">
                 <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
                 <input type="text" v-model="searchQuery" placeholder="Что хочешь послушать?" @input="onSearch"
-                    class="search-input" />
+                    @keydown.enter="goToFullSearch" class="search-input" />
+
+                <Transition name="fade-dropdown">
+                    <div v-if="showPreview && hasPreviewResults" class="search-preview-dropdown">
+
+                        <div v-if="searchPreviewResults.songs.length > 0" class="preview-section">
+                            <div class="preview-section-title">Треки</div>
+                            <div v-for="(track, index) in searchPreviewResults.songs" :key="track.id"
+                                class="preview-item" @click.stop="playTrack(index)">
+                                <img :src="track.cover || '/default-cover.png'" class="preview-item-cover" />
+                                <div class="preview-item-info">
+                                    <div class="preview-item-title">{{ track.title }}</div>
+                                    <div class="preview-item-subtitle">{{ track.artist }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="searchPreviewResults.playlists.length > 0" class="preview-section">
+                            <div class="preview-section-title">Плейлисты</div>
+                            <div v-for="playlist in searchPreviewResults.playlists" :key="playlist.id"
+                                class="preview-item" @click.stop="openPlaylist(playlist.id)">
+                                <img :src="playlist.cover || '/default-cover.png'"
+                                    class="preview-item-cover-playlist" />
+                                <div class="preview-item-info">
+                                    <div class="preview-item-title">{{ playlist.title }}</div>
+                                    <div class="preview-item-subtitle">Плейлист</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preview-footer" @click.stop="goToFullSearch">
+                            Нажмите Enter, чтобы увидеть все результаты
+                        </div>
+                    </div>
+                </Transition>
             </div>
         </div>
 
@@ -58,23 +92,57 @@
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth'
+import { usePlayerStore } from '../stores/player'
 
 export default {
     name: 'AppHeader',
     setup() {
         const searchQuery = ref('')
         const isMenuOpen = ref(false)
-        const dropdownRef = ref(null) // Ссылка на DOM-элемент контейнера
+        const showPreview = ref(false)
+
+        const dropdownRef = ref(null)
+        const searchContainerRef = ref(null)
+        let debounceTimeout = null
 
         const router = useRouter()
         const authStore = useAuthStore()
+        const playerStore = usePlayerStore()
+
+        const { searchPreviewResults } = storeToRefs(playerStore)
 
         const isAuthenticated = computed(() => authStore.isAuthenticated)
         const user = computed(() => authStore.user || { name: 'Гость', avatarUrl: '' })
 
+        const hasPreviewResults = computed(() => {
+            return searchPreviewResults.value.songs.length > 0 || searchPreviewResults.value.playlists.length > 0
+        })
+
         const onSearch = () => {
-            console.log('Поиск:', searchQuery.value)
+            showPreview.value = true
+            clearTimeout(debounceTimeout)
+            debounceTimeout = setTimeout(() => {
+                playerStore.searchPreview(searchQuery.value)
+            }, 300)
+        }
+
+        const goToFullSearch = () => {
+            if (!searchQuery.value.trim()) return
+            showPreview.value = false
+            router.push({ name: 'Search', query: { q: searchQuery.value } })
+        }
+
+        const playTrack = (index) => {
+            showPreview.value = false
+            // Передаем весь массив результатов и индекс кликнутого трека
+            playerStore.playTrackFromList(searchPreviewResults.value.songs, index, `Быстрый поиск: ${searchQuery.value}`)
+        }
+
+        const openPlaylist = (id) => {
+            showPreview.value = false
+            router.push({ name: 'regular-playlist', params: { id } })
         }
 
         const handleLogin = () => {
@@ -87,7 +155,7 @@ export default {
 
         const goToEditProfile = () => {
             isMenuOpen.value = false
-            router.push('/profile/edit') // Укажи свой роут для редактирования
+            router.push('/profile/edit')
         }
 
         const handleLogout = () => {
@@ -98,10 +166,12 @@ export default {
             }
         }
 
-        // Хелпер: закрытие меню при клике в любое другое место экрана
         const handleClickOutside = (event) => {
             if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
                 isMenuOpen.value = false
+            }
+            if (searchContainerRef.value && !searchContainerRef.value.contains(event.target)) {
+                showPreview.value = false
             }
         }
 
@@ -111,15 +181,23 @@ export default {
 
         onUnmounted(() => {
             document.removeEventListener('click', handleClickOutside)
+            clearTimeout(debounceTimeout)
         })
 
         return {
             searchQuery,
             isMenuOpen,
+            showPreview,
             dropdownRef,
+            searchContainerRef,
             isAuthenticated,
             user,
+            searchPreviewResults,
+            hasPreviewResults,
             onSearch,
+            goToFullSearch,
+            playTrack,
+            openPlaylist,
             handleLogin,
             toggleMenu,
             goToEditProfile,
@@ -262,12 +340,10 @@ export default {
     z-index: 15;
 }
 
-/* Изменение стиля профиля при активном меню */
 .user-profile.active {
     background-color: var(--color-foundation-orange-light);
 }
 
-/* Само выпадающее меню */
 .dropdown-menu {
     position: absolute;
     top: calc(100% + 8px);
@@ -283,7 +359,6 @@ export default {
     border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
-/* Элемент списка */
 .dropdown-item {
     display: flex;
     align-items: center;
@@ -311,11 +386,6 @@ export default {
     background-color: var(--color-foundation-surface-light);
 }
 
-.dropdown-item:hover stroke {
-    color: var(--color-foundation-orange-normal);
-}
-
-/* Разделительная линия */
 .dropdown-divider {
     height: 1px;
     background-color: var(--color-foundation-orange-light-active);
@@ -323,7 +393,6 @@ export default {
     opacity: 0.5;
 }
 
-/* Элемент выхода */
 .dropdown-item.logout-item {
     color: #E64646;
 }
@@ -336,7 +405,6 @@ export default {
     background-color: #FFF5F5;
 }
 
-/* Анимация появления (Fade + Slide) */
 .fade-dropdown-enter-active,
 .fade-dropdown-leave-active {
     transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1),
@@ -347,5 +415,99 @@ export default {
 .fade-dropdown-leave-to {
     opacity: 0;
     transform: translateY(-8px);
+}
+
+.search-preview-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.08);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.preview-section {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.preview-section-title {
+    padding: 4px 18px;
+    font-family: 'Pliant', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-foundation-dark-lighter);
+    letter-spacing: 0.05em;
+}
+
+.preview-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.preview-item:hover {
+    background: var(--color-foundation-orange-light);
+}
+
+.preview-item-cover {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.preview-item-cover-playlist {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.preview-item-info {
+    min-width: 0;
+}
+
+.preview-item-title {
+    font-family: 'Pliant', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-foundation-dark-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preview-item-subtitle {
+    font-family: 'Pliant', sans-serif;
+    font-size: 11px;
+    color: var(--color-foundation-dark-lighter);
+    margin-top: 1px;
+}
+
+.preview-footer {
+    padding: 12px;
+    text-align: center;
+    font-family: 'Pliant', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-foundation-orange-normal);
+    background: rgba(255, 126, 58, 0.03);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.preview-footer:hover {
+    background: rgba(255, 126, 58, 0.07);
 }
 </style>
